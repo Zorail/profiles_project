@@ -1,9 +1,40 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
-
+from django.contrib.auth.models import BaseUserManager
 
 # Create your models here.
+
+class UserProfileManager(BaseUserManager):
+    """Helps django to work with our custom user"""
+
+    def create_user(self, email, name, password):
+        """Creates a new user object."""
+
+        if not email:
+            raise ValueError('User must input an email.')
+
+        # Normalizing email so that all emails are of same case
+        email = self.normalize_email(email)
+        user = self.model(email=email, name=name)
+
+        user.set_password(password)
+        user.save(using=self._db)
+
+        return user
+
+    def create_superuser(self, email, name, password):
+        """Creates and saves a new superuser with given detais."""
+
+        user = self.create_user(email, name, password)
+
+        # For admin rights
+        user.is_superuser = True
+        user.is_staff = True
+
+        user.save(using=self._db)
+
+
 class UserProfile(AbstractBaseUser, PermissionsMixin):
     """Represent a user profile inside our system"""
 
@@ -20,7 +51,7 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['name']
 
 
-    # //Required for django admin
+    # //All 3 functions are required for django admin
     def get_full_name(self):
         return self.name
 
@@ -28,4 +59,4 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
         return self.name
 
     def __str__(self):
-        return self.email       
+        return self.email
